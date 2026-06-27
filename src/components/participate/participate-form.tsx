@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ThumbsDown, ThumbsUp, CheckCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/components/ui/header";
+import { NameSelect } from "@/components/ui/name-select";
 import { inputClassName } from "@/components/ui/input-styles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DuplicateModal } from "@/components/participate/duplicate-modal";
@@ -142,14 +143,12 @@ export function ParticipateForm({ roundId }: ParticipateFormProps) {
           <p className="text-lg font-medium text-zinc-600">
             이 라운드는 신청이 마감되었습니다.
           </p>
-          {round.status === "drawn" && (
-            <Link
-              href={`/draw/${round.id}`}
-              className="mt-4 inline-block rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white"
-            >
-              추첨 결과 보기
-            </Link>
-          )}
+          <Link
+            href={`/round/${round.id}`}
+            className="mt-4 inline-block rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white"
+          >
+            라운드 결과 보기
+          </Link>
         </main>
       </div>
     );
@@ -191,13 +190,11 @@ export function ParticipateForm({ roundId }: ParticipateFormProps) {
             <label className="mb-2 block text-sm font-semibold text-zinc-700">
               이름
             </label>
-            <input
-              type="text"
+            <NameSelect
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="홍길동"
+              onChange={setName}
+              placeholder="이름 선택"
               required
-              className={inputClassName}
             />
           </div>
 

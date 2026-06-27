@@ -7,6 +7,7 @@ import { Header } from "@/components/ui/header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoundSummary } from "@/components/round/round-summary";
 import { RoundSettleForm } from "@/components/round/round-settle-form";
+import { RoomAssignmentManager } from "@/components/round/room-assignment-manager";
 import { fetchRoundResult } from "@/lib/utils/round-data";
 import type { RoundResultData } from "@/lib/types/database";
 
@@ -68,6 +69,15 @@ export function RoundResultPage({ roundId }: RoundResultPageProps) {
         <div className="mb-8 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
           <RoundSummary data={data} showLink={false} />
         </div>
+
+        {data.round.status !== "open" && (
+          <section className="mb-8 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-zinc-900">
+              방 배정 <span className="text-sm font-normal text-zinc-400">(선택)</span>
+            </h2>
+            <RoomAssignmentManager round={data.round} onUpdated={load} />
+          </section>
+        )}
 
         <RoundSettleForm data={data} onSaved={load} />
 

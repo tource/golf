@@ -45,9 +45,7 @@ interface MonthlyAvg {
 
 export function StatsContent() {
   const [loading, setLoading] = useState(true);
-  const [loadingMsg] = useState(
-    () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
-  );
+  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   const [scoreRanks, setScoreRanks] = useState<ScoreRank[]>([]);
   const [venueRanks, setVenueRanks] = useState<VenueRank[]>([]);
   const [coffeeRanks, setCoffeeRanks] = useState<CoffeeRank[]>([]);
@@ -125,6 +123,9 @@ export function StatsContent() {
   }, [supabase]);
 
   useEffect(() => {
+    setLoadingMsg(
+      LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
+    );
     fetchStats();
   }, [fetchStats]);
 

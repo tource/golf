@@ -47,15 +47,16 @@ export function RoundSummary({
         </p>
       </div>
 
-      {/* 방 배정 */}
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-700">
-          방 배정
-        </p>
-        <div
-          className={`grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}
-        >
-          {rooms.map((roomNum) => {
+      {/* 방 배정 — 배정된 경우만 표시 */}
+      {assignments.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-700">
+            방 배정
+          </p>
+          <div
+            className={`grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}
+          >
+            {rooms.map((roomNum) => {
             const color = getRoomColor(roomNum);
             const members = assignments.filter(
               (a) => a.room_number === roomNum,
@@ -89,9 +90,10 @@ export function RoundSummary({
                 </ul>
               </div>
             );
-          })}
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 이번 라운드 순위 */}
       {roundRanking.length > 0 && (

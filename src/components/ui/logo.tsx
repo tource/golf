@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import logoImage from "../../../public/logo.png";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
@@ -19,12 +20,12 @@ export function Logo({ size = "md", showText = true, href = "/" }: LogoProps) {
   const content = (
     <>
       <Image
-        src="/logo.png"
-        alt="날려보세 골프클럽"
+        src={logoImage}
+        alt="날려보세"
         width={px}
         height={px}
-        className="rounded-full object-cover shadow-sm"
-        priority={size !== "sm"}
+        className=" object-cover "
+        // priority={size !== "sm"}
       />
       {showText && (
         <span className="text-lg font-bold tracking-tight text-zinc-900">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import logoImage from "../../public/logo.png";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,11 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "날려보세 | 골프 동아리",
+  title: "날려보세",
   description: "참여 신청, 방 배정 추첨, 동아리 통계",
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: logoImage.src,
+    apple: logoImage.src,
   },
 };
 

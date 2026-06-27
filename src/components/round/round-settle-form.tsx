@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Coffee, Receipt, Save, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { inputClassName, inputClassNameSm, selectClassName } from "@/components/ui/input-styles";
+import { SelectField } from "@/components/ui/select-field";
+import { inputClassName, inputClassNameSm } from "@/components/ui/input-styles";
 import type { RoundResultData } from "@/lib/types/database";
 import { calcPerPerson } from "@/lib/utils/round-data";
 
@@ -82,10 +83,10 @@ export function RoundSettleForm({ data, onSaved }: RoundSettleFormProps) {
     onSaved();
   }
 
-  if (round.status === "open" || round.status === "closed") {
+  if (round.status === "open") {
     return (
       <p className="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-500">
-        추첨이 완료된 후 점수와 정산을 입력할 수 있습니다.
+        신청 마감 후 점수와 정산을 입력할 수 있습니다.
       </p>
     );
   }
@@ -175,19 +176,16 @@ export function RoundSettleForm({ data, onSaved }: RoundSettleFormProps) {
         )}
 
         <form onSubmit={handleAddCoffee} className="flex flex-wrap gap-3">
-          <select
+          <SelectField
             value={coffeePayer}
-            onChange={(e) => setCoffeePayer(e.target.value)}
-            required
-            className={`${selectClassName} min-w-[140px] flex-1`}
-          >
-            <option value="">누가 쏘나요?</option>
-            {participants.map((p) => (
-              <option key={p.id} value={p.name}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            onChange={setCoffeePayer}
+            options={[
+              { value: "", label: "누가 쏘나요?" },
+              ...participants.map((p) => ({ value: p.name, label: p.name })),
+            ]}
+            placeholder="누가 쏘나요?"
+            className="min-w-[140px] flex-1"
+          />
           <input
             value={coffeeNote}
             onChange={(e) => setCoffeeNote(e.target.value)}

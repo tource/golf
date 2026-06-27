@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Calendar, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { inputClassNameSm, selectClassName } from "@/components/ui/input-styles";
+import { inputClassNameSm } from "@/components/ui/input-styles";
+import { SelectField } from "@/components/ui/select-field";
 import type { Round, Venue } from "@/lib/types/database";
 
 interface RoundFormProps {
@@ -88,18 +89,12 @@ export function RoundForm({ onCreated }: RoundFormProps) {
           <label className="mb-1 block text-xs font-medium text-zinc-600">
             매장
           </label>
-          <select
+          <SelectField
             value={venueId}
-            onChange={(e) => setVenueId(e.target.value)}
-            required
-            className={selectClassName}
-          >
-            {venues.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
-          </select>
+            onChange={setVenueId}
+            options={venues.map((v) => ({ value: v.id, label: v.name }))}
+            placeholder="매장 선택"
+          />
         </div>
 
         <div>
@@ -154,17 +149,14 @@ export function RoundSelector({
   onSelect: (id: string) => void;
 }) {
   return (
-    <select
+    <SelectField
       value={selectedId}
-      onChange={(e) => onSelect(e.target.value)}
-      className={selectClassName}
-    >
-      {rounds.map((r) => (
-        <option key={r.id} value={r.id}>
-          {r.title} ({r.status}) —{" "}
-          {new Date(r.date).toLocaleDateString("ko-KR")}
-        </option>
-      ))}
-    </select>
+      onChange={onSelect}
+      options={rounds.map((r) => ({
+        value: r.id,
+        label: `${r.title} (${r.status}) — ${new Date(r.date).toLocaleDateString("ko-KR")}`,
+      }))}
+      placeholder="라운드 선택"
+    />
   );
 }

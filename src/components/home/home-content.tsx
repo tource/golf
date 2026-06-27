@@ -7,17 +7,17 @@ import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/components/ui/header";
 import { HomeSkeleton } from "@/components/ui/skeleton";
 import { Countdown } from "@/components/home/countdown";
-import { RoundSummary } from "@/components/round/round-summary";
-import { fetchRoundResult } from "@/lib/utils/round-data";
-import type { RoundResultData, RoundWithVenue } from "@/lib/types/database";
+import {
+  RoundHistoryList,
+  type RoundHistoryItem,
+} from "@/components/home/round-history-list";
+import type { RoundWithVenue } from "@/lib/types/database";
 
 export function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [openRound, setOpenRound] = useState<RoundWithVenue | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
-  const [recentResult, setRecentResult] = useState<RoundResultData | null>(
-    null,
-  );
+  const [history, setHistory] = useState<RoundHistoryItem[]>([]);
   const supabase = createClient();
 
   const fetchData = useCallback(async () => {
@@ -41,17 +41,52 @@ export function HomeContent() {
       setParticipantCount(count ?? 0);
     }
 
-    // drawn 또는 completed 상태의 최근 라운드
-    const { data: recentRounds } = await supabase
+    const { data: pastRounds } = await supabase
       .from("rounds")
-      .select("id")
-      .in("status", ["drawn", "completed"])
-      .order("date", { ascending: false })
-      .limit(1);
+      .select("*, venues(*)")
+      .in("status", ["closed", "drawn", "completed"])
+      .order("date", { ascending: false });
 
-    if (recentRounds?.[0]) {
-      const result = await fetchRoundResult(recentRounds[0].id);
-      setRecentResult(result);
+    if (pastRounds && pastRounds.length > 0) {
+      const roundIds = pastRounds.map((r) => r.id);
+
+      const [{ data: allParticipants }, { data: settlements }] =
+        await Promise.all([
+          supabase
+            .from("participants")
+            .select("round_id, name, score, is_attending")
+            .in("round_id", roundIds)
+            .eq("is_attending", true),
+          supabase
+            .from("round_settlements")
+            .select("round_id, total_cost")
+            .in("round_id", roundIds),
+        ]);
+
+      const settlementMap = new Map(
+        (settlements ?? []).map((s) => [s.round_id, s.total_cost]),
+      );
+
+      const items: RoundHistoryItem[] = pastRounds.map((round) => {
+        const r = round as RoundWithVenue;
+        const roundParticipants = (allParticipants ?? []).filter(
+          (p) => p.round_id === r.id,
+        );
+        const scored = roundParticipants
+          .filter((p) => p.score != null)
+          .sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+        const winner = scored[0];
+
+        return {
+          round: r,
+          participantCount: roundParticipants.length,
+          winnerName: winner?.name ?? null,
+          winnerScore: winner?.score ?? null,
+          totalCost: settlementMap.get(r.id) ?? null,
+        };
+      });
+
+      setHistory(items);
     }
 
     setLoading(false);
@@ -108,8 +143,7 @@ export function HomeContent() {
                   <p className="mt-2 text-4xl font-black text-emerald-700">
                     {participantCount}
                     <span className="text-lg font-medium text-zinc-400">
-                      {" "}
-                      / {maxCapacity}명
+                      {" "}/ {maxCapacity}명
                     </span>
                   </p>
                 </div>
@@ -127,36 +161,22 @@ export function HomeContent() {
             ) : (
               <section className="mb-10 rounded-3xl border border-zinc-100 bg-white p-12 text-center shadow-sm">
                 <p className="text-lg font-medium text-zinc-600">
-                  현재 모집 중인 모임이 없습니다
+                  현재 모집 중인 라운드가 없습니다
                 </p>
               </section>
             )}
 
-            {recentResult && (
-              <section className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-lg font-bold text-zinc-900">
-                  최근 라운드 결과
-                </h2>
-                <RoundSummary data={recentResult} compact showLink={false} />
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Link
-                    href={`/round/${recentResult.round.id}`}
-                    className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
-                  >
-                    전체 결과 보기
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                  {recentResult.assignments.length > 0 && (
-                    <Link
-                      href={`/draw/${recentResult.round.id}?skip=1`}
-                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 px-5 py-2.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
-                    >
-                      방 배정 보기
-                    </Link>
-                  )}
-                </div>
-              </section>
-            )}
+            <section className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-lg font-bold text-zinc-900">
+                역대 라운드
+                {history.length > 0 && (
+                  <span className="ml-2 text-sm font-normal text-zinc-400">
+                    {history.length}경기
+                  </span>
+                )}
+              </h2>
+              <RoundHistoryList items={history} />
+            </section>
           </>
         )}
       </main>

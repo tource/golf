@@ -115,11 +115,11 @@ create policy "participants: public insert" on participants for insert with chec
 create policy "participants: public update" on participants for update using (true);
 create policy "participants: public delete" on participants for delete using (true);
 
--- room_assignments: 누구나 읽기, 관리자만 쓰기
+-- room_assignments: 누구나 읽기/쓰기 (선택적 배정, 언제든 변경)
 create policy "room_assignments: public read"  on room_assignments for select using (true);
-create policy "room_assignments: admin insert" on room_assignments for insert with check (is_admin());
-create policy "room_assignments: admin update" on room_assignments for update using (is_admin());
-create policy "room_assignments: admin delete" on room_assignments for delete using (is_admin());
+create policy "room_assignments: public insert" on room_assignments for insert with check (true);
+create policy "room_assignments: public update" on room_assignments for update using (true);
+create policy "room_assignments: public delete" on room_assignments for delete using (true);
 
 create policy "round_settlements: public read"   on round_settlements for select using (true);
 create policy "round_settlements: public insert"  on round_settlements for insert with check (true);
