@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ThumbsDown, ThumbsUp, CheckCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/components/ui/header";
 import { NameSelect } from "@/components/ui/name-select";
@@ -10,7 +16,14 @@ import { inputClassName } from "@/components/ui/input-styles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DuplicateModal } from "@/components/participate/duplicate-modal";
 import { ParticipantList } from "@/components/participate/participant-list";
+import { VenueInfo } from "@/components/ui/venue-info";
+import { CopyLinkButton } from "@/components/ui/copy-link-button";
+import { MyRoomCard } from "@/components/ui/my-room-card";
 import type { Participant, RoundWithVenue } from "@/lib/types/database";
+import {
+  getSavedMemberName,
+  saveMemberName,
+} from "@/lib/utils/member-name";
 
 interface ParticipateFormProps {
   roundId: string;
@@ -28,22 +41,34 @@ export function ParticipateForm({ roundId }: ParticipateFormProps) {
   const [comment, setComment] = useState("");
   const [showDuplicate, setShowDuplicate] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
+  const [assignmentCount, setAssignmentCount] = useState(0);
 
   const supabase = createClient();
 
+  useEffect(() => {
+    const saved = getSavedMemberName();
+    if (saved) setName(saved);
+  }, []);
+
   // 라운드 정보 + 참여자 목록을 Supabase에서 불러옵니다.
   const fetchData = useCallback(async () => {
-    const [{ data: roundData }, { data: participantData }] = await Promise.all([
-      supabase.from("rounds").select("*, venues(*)").eq("id", roundId).single(),
-      supabase
-        .from("participants")
-        .select("*")
-        .eq("round_id", roundId)
-        .order("created_at", { ascending: true }),
-    ]);
+    const [{ data: roundData }, { data: participantData }, { count }] =
+      await Promise.all([
+        supabase.from("rounds").select("*, venues(*)").eq("id", roundId).single(),
+        supabase
+          .from("participants")
+          .select("*")
+          .eq("round_id", roundId)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("room_assignments")
+          .select("*", { count: "exact", head: true })
+          .eq("round_id", roundId),
+      ]);
 
     if (roundData) setRound(roundData as RoundWithVenue);
     if (participantData) setParticipants(participantData as Participant[]);
+    setAssignmentCount(count ?? 0);
     setLoading(false);
   }, [roundId, supabase]);
 
@@ -87,6 +112,7 @@ export function ParticipateForm({ roundId }: ParticipateFormProps) {
 
     setSubmitted(true);
     setShowDuplicate(false);
+    saveMemberName(name.trim());
     setSubmitting(false);
     fetchData();
   }
@@ -139,16 +165,48 @@ export function ParticipateForm({ roundId }: ParticipateFormProps) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 to-white">
         <Header />
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-          <p className="text-lg font-medium text-zinc-600">
-            이 라운드는 신청이 마감되었습니다.
-          </p>
+        <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
           <Link
-            href={`/round/${round.id}`}
-            className="mt-4 inline-block rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white"
+            href="/"
+            className="mb-6 inline-flex items-center gap-1 text-sm text-emerald-700"
           >
-            라운드 결과 보기
+            <ArrowLeft className="h-4 w-4" />
+            홈으로
           </Link>
+
+          <div className="mb-6 rounded-2xl border border-emerald-100 bg-white p-6 text-center shadow-sm">
+            <p className="text-lg font-bold text-zinc-900">{round.title}</p>
+            <p className="mt-2 text-sm text-zinc-500">
+              이 라운드는 신청이 마감되었습니다.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <VenueInfo venue={round.venues} compact />
+            </div>
+          </div>
+
+          {assignmentCount > 0 && (
+            <div className="mb-6">
+              <MyRoomCard roundId={round.id} assignmentCount={assignmentCount} />
+            </div>
+          )}
+
+          <div className="flex flex-col items-center gap-3">
+            <Link
+              href={`/round/${round.id}`}
+              className="w-full rounded-full bg-emerald-600 px-6 py-3 text-center text-sm font-semibold text-white"
+            >
+              라운드 결과 보기
+            </Link>
+            {assignmentCount > 0 && (
+              <Link
+                href={`/draw/${round.id}`}
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-emerald-200 px-6 py-3 text-sm font-semibold text-emerald-700"
+              >
+                <Sparkles className="h-4 w-4" />
+                추첨 애니메이션 보기
+              </Link>
+            )}
+          </div>
         </main>
       </div>
     );
@@ -167,18 +225,45 @@ export function ParticipateForm({ roundId }: ParticipateFormProps) {
           홈으로
         </Link>
 
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-zinc-900">{round.title}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {round.venues.name} ·{" "}
+          <p className="mt-2 text-sm text-zinc-500">
             {new Date(round.date).toLocaleString("ko-KR")}
           </p>
+          <div className="mt-3">
+            <VenueInfo venue={round.venues} compact />
+          </div>
         </div>
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          <CopyLinkButton
+            path={`/participate?round=${roundId}`}
+            label="참여 링크 복사"
+          />
+          {assignmentCount > 0 && (
+            <Link
+              href={`/draw/${roundId}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+            >
+              <Sparkles className="h-4 w-4" />
+              추첨 보기
+            </Link>
+          )}
+        </div>
+
+        {assignmentCount > 0 && (
+          <div className="mb-6">
+            <MyRoomCard roundId={roundId} assignmentCount={assignmentCount} />
+          </div>
+        )}
 
         {submitted && (
           <div className="mb-6 flex items-center gap-2 rounded-2xl bg-emerald-50 px-5 py-4 text-emerald-800">
             <CheckCircle className="h-5 w-5 shrink-0" />
-            <p className="text-sm font-medium">신청이 완료되었습니다!</p>
+            <p className="text-sm font-medium">
+              {name.trim()}님,{" "}
+              {isAttending ? "참여" : "불참"}로 등록되었습니다!
+            </p>
           </div>
         )}
 
@@ -192,7 +277,10 @@ export function ParticipateForm({ roundId }: ParticipateFormProps) {
             </label>
             <NameSelect
               value={name}
-              onChange={setName}
+              onChange={(v) => {
+                setName(v);
+                saveMemberName(v);
+              }}
               placeholder="이름 선택"
               required
             />

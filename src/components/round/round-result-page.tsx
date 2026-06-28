@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { Header } from "@/components/ui/header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoundSummary } from "@/components/round/round-summary";
 import { RoundSettleForm } from "@/components/round/round-settle-form";
 import { RoomAssignmentManager } from "@/components/round/room-assignment-manager";
+import { MyRoomCard } from "@/components/ui/my-room-card";
 import { fetchRoundResult } from "@/lib/utils/round-data";
+import { getSavedMemberName } from "@/lib/utils/member-name";
 import type { RoundResultData } from "@/lib/types/database";
 
 interface RoundResultPageProps {
@@ -18,6 +20,7 @@ interface RoundResultPageProps {
 export function RoundResultPage({ roundId }: RoundResultPageProps) {
   const [data, setData] = useState<RoundResultData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [myName, setMyName] = useState("");
 
   const load = useCallback(async () => {
     const result = await fetchRoundResult(roundId);
@@ -28,6 +31,10 @@ export function RoundResultPage({ roundId }: RoundResultPageProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    setMyName(getSavedMemberName());
+  }, []);
 
   if (loading) {
     return (
@@ -67,8 +74,21 @@ export function RoundResultPage({ roundId }: RoundResultPageProps) {
         </Link>
 
         <div className="mb-8 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-          <RoundSummary data={data} showLink={false} />
+          <RoundSummary
+            data={data}
+            showLink={false}
+            highlightName={myName || undefined}
+          />
         </div>
+
+        {data.assignments.length > 0 && (
+          <section className="mb-8">
+            <MyRoomCard
+              roundId={roundId}
+              assignmentCount={data.assignments.length}
+            />
+          </section>
+        )}
 
         {data.round.status !== "open" && (
           <section className="mb-8 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
@@ -82,12 +102,19 @@ export function RoundResultPage({ roundId }: RoundResultPageProps) {
         <RoundSettleForm data={data} onSaved={load} />
 
         {data.assignments.length > 0 && (
-          <div className="mt-6 text-center">
+          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href={`/draw/${roundId}`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-900"
+            >
+              <Sparkles className="h-4 w-4" />
+              추첨 애니메이션 보기
+            </Link>
             <Link
               href={`/draw/${roundId}?skip=1`}
               className="text-sm text-zinc-500 hover:text-emerald-700"
             >
-              추첨 애니메이션 다시 보기
+              결과만 바로 보기
             </Link>
           </div>
         )}

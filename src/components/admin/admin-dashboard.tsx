@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, Users, LogOut, Lock, Unlock } from "lucide-react";
+import { Download, Users, LogOut, Lock, Unlock, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { participantsToCSV, downloadCSV } from "@/lib/utils/csv";
 import { RoundForm, RoundSelector } from "@/components/admin/round-form";
@@ -14,6 +14,7 @@ export function AdminDashboard() {
   const [selectedRoundId, setSelectedRoundId] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [filter, setFilter] = useState<"all" | "attending" | "absent">("all");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const supabase = createClient();
 
   const fetchRounds = useCallback(async () => {
@@ -74,6 +75,28 @@ export function AdminDashboard() {
   function handleCSV() {
     const csv = participantsToCSV(participants);
     downloadCSV(csv, `participants-${selectedRound?.title ?? "round"}.csv`);
+  }
+
+  async function handleDeleteParticipant(participant: Participant) {
+    const ok = window.confirm(
+      `"${participant.name}" 참여자를 삭제할까요?\n방 배정이 있으면 함께 제거됩니다.`,
+    );
+    if (!ok) return;
+
+    setDeletingId(participant.id);
+    const { error } = await supabase
+      .from("participants")
+      .delete()
+      .eq("id", participant.id);
+
+    setDeletingId(null);
+
+    if (error) {
+      alert(`삭제에 실패했습니다: ${error.message}`);
+      return;
+    }
+
+    fetchParticipants();
   }
 
   async function handleLogout() {
@@ -180,12 +203,13 @@ export function AdminDashboard() {
                       <th className="px-4 py-3 text-left font-semibold text-zinc-600">신청시간</th>
                       <th className="px-4 py-3 text-left font-semibold text-zinc-600">스코어</th>
                       <th className="px-4 py-3 text-left font-semibold text-zinc-600">한마디</th>
+                      <th className="px-4 py-3 text-right font-semibold text-zinc-600">관리</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
+                        <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">
                           참여자가 없습니다
                         </td>
                       </tr>
@@ -205,6 +229,18 @@ export function AdminDashboard() {
                             {p.score != null ? `${p.score}타` : "-"}
                           </td>
                           <td className="px-4 py-3 text-zinc-400">{p.comment ?? "-"}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteParticipant(p)}
+                              disabled={deletingId === p.id}
+                              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                              title="참여자 삭제"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              {deletingId === p.id ? "삭제 중" : "삭제"}
+                            </button>
+                          </td>
                         </tr>
                       ))
                     )}

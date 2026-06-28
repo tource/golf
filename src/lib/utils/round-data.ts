@@ -51,6 +51,40 @@ export async function fetchRoundResult(
   };
 }
 
+/** 방(팀)별 합산 타수 — 낮을수록 좋음 */
+export function calcRoomTeamScores(
+  assignments: AssignmentWithParticipant[],
+): {
+  roomNumber: number;
+  total: number;
+  memberCount: number;
+  scoredCount: number;
+}[] {
+  const byRoom = new Map<number, AssignmentWithParticipant[]>();
+  for (const a of assignments) {
+    const list = byRoom.get(a.room_number) ?? [];
+    list.push(a);
+    byRoom.set(a.room_number, list);
+  }
+
+  return [...byRoom.entries()]
+    .map(([roomNumber, members]) => {
+      const scored = members.filter((m) => m.participants.score != null);
+      const total = scored.reduce(
+        (sum, m) => sum + (m.participants.score ?? 0),
+        0,
+      );
+      return {
+        roomNumber,
+        total,
+        memberCount: members.length,
+        scoredCount: scored.length,
+      };
+    })
+    .filter((r) => r.scoredCount > 0)
+    .sort((a, b) => a.total - b.total);
+}
+
 /** 1/n 정산 금액 (올림) */
 export function calcPerPerson(totalCost: number, headCount: number): number {
   if (headCount <= 0) return 0;
