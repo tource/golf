@@ -99,7 +99,7 @@ export function RoundResultPage({ roundId }: RoundResultPageProps) {
           </section>
         )}
 
-        <RoundSettleForm data={data} onSaved={load} />
+        <RoundSettleForm data={data} />
 
         {data.assignments.length > 0 && (
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

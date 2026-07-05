@@ -53,6 +53,14 @@ export interface CoffeeBet {
   created_at: string;
 }
 
+export interface MemberNickname {
+  id: string;
+  nickname: string;
+  member_name: string;
+  note: string | null;
+  created_at: string;
+}
+
 export interface RoundWithVenue extends Round {
   venues: Venue;
 }

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { AdminHome } from "@/components/admin/admin-home";
+import { AdminRoomsPage } from "@/components/admin/admin-rooms-page";
 
-export default function AdminPage() {
+export default function Page() {
   return (
     <Suspense
       fallback={
@@ -10,7 +10,7 @@ export default function AdminPage() {
         </div>
       }
     >
-      <AdminHome />
+      <AdminRoomsPage />
     </Suspense>
   );
 }
